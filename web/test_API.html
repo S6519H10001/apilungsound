@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lung Sound Classifier</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --primary: #1e88e5;
+      --bg: #f4f7f9;
+      --text: #333;
+      --card: #fff;
+      --radius: 12px;
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 40px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: var(--primary);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    label.upload-btn {
+      display: inline-block;
+      background-color: var(--primary);
+      color: white;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: 0.2s ease-in-out;
+    }
+
+    label.upload-btn:hover {
+      background-color: #1565c0;
+    }
+
+    button {
+      background-color: #43a047;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+    }
+
+    button:hover {
+      background-color: #388e3c;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .file-name {
+      font-size: 14px;
+      color: #666;
+      margin-top: -10px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔍 Lung Sound Classifier</h1>
+    
+    <input type="file" id="audioFile" accept=".wav">
+    <label for="audioFile" class="upload-btn">📁 เลือกไฟล์เสียง (.wav)</label>
+    <div class="file-name" id="fileName">ยังไม่ได้เลือกไฟล์</div>
+
+    <button onclick="sendFile()">🚀 วิเคราะห์เสียง</button>
+
+    <div class="result" id="resultBox"></div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('audioFile');
+    const fileNameText = document.getElementById('fileName');
+    const resultBox = document.getElementById('resultBox');
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) {
+        fileNameText.textContent = `📌 ไฟล์ที่เลือก: ${fileInput.files[0].name}`;
+      } else {
+        fileNameText.textContent = "ยังไม่ได้เลือกไฟล์";
+      }
+    });
+
+    async function sendFile() {
+      if (!fileInput.files.length) {
+        resultBox.innerHTML = "⚠ กรุณาเลือกไฟล์ .wav ก่อน";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      resultBox.innerHTML = "⏳ กำลังประมวลผล...";
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/predict", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          resultBox.innerHTML = `✅ <b>${data.class}</b><br>🎯 ความมั่นใจ: <b>${(data.confidence * 100).toFixed(2)}%</b>`;
+        } else {
+          resultBox.innerHTML = `❌ Error: ${data.detail || data.error}`;
+        }
+      } catch (err) {
+        resultBox.innerHTML = `❌ ไม่สามารถเชื่อมต่อ API ได้: ${err}`;
+      }
+    }
+  </script>
+</body>
+</html>
